@@ -5,76 +5,83 @@ import com.napptlilus.testapp.exception.NotFoundException;
 import com.napptlilus.testapp.model.OompaLoompa;
 import com.napptlilus.testapp.service.OompaLoompaService;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
-import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
+import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import javax.naming.ServiceUnavailableException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/oompaloompa")
 public class OompaLoompaController {
 
-    private static final Logger LOG = LoggerFactory.getLogger(OompaLoompaController.class);
-
     private OompaLoompaService oompaLoompaService;
+    private ModelMapper modelMapper;
 
-    public OompaLoompaController(OompaLoompaService oompaLoompaService) {
+    public OompaLoompaController(OompaLoompaService oompaLoompaService,ModelMapper modelMapper) {
         this.oompaLoompaService = oompaLoompaService;
+        this.modelMapper = modelMapper;
     }
 
     @HystrixCommand(
-            fallbackMethod = "fallbackFindById",
-            ignoreExceptions = {NotFoundException.class},
-            commandProperties = {
-                    @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "1000")})
+            fallbackMethod = "fallbackSaveOrUpdate",
+            commandKey = "saveCommand")
     @PostMapping
-    public ResponseEntity save(@RequestBody OompaLoompaDTO oompaLoompaDTO) throws Exception {
-        oompaLoompaService.save(oompaLoompaDTO);
-        return new ResponseEntity("successfully saved", HttpStatus.OK);
+    public ResponseEntity create(@RequestBody OompaLoompaDTO oompaLoompaDTO) throws Exception {
+        oompaLoompaService.create(convertToEntity(oompaLoompaDTO));
+        return new ResponseEntity("Success", HttpStatus.OK);
     }
 
-
+    @HystrixCommand(
+            fallbackMethod = "fallbackSaveOrUpdate",
+            commandKey = "saveCommand",
+            ignoreExceptions = {NotFoundException.class,IllegalArgumentException.class})
+    @PutMapping
+    public ResponseEntity update(@RequestBody OompaLoompaDTO oompaLoompaDTO) throws Exception {
+        oompaLoompaService.update(convertToEntity(oompaLoompaDTO));
+        return new ResponseEntity("Success", HttpStatus.OK);
+    }
 
 
     @GetMapping(path = "/{id}")
-    @Cacheable(value = "oompaloompas", key = "#oompaLoompa.id")
-    public ResponseEntity findById(@PathVariable String id) throws InterruptedException {
-        LOG.info("finding requested OompaLoompa: ",id);
-        OompaLoompa oompaLoompa = oompaLoompaService.findById(Long.parseLong(id));
-        return new ResponseEntity(oompaLoompa, HttpStatus.OK);
-    }
-
-    public ResponseEntity fallbackSave(OompaLoompaDTO oompaLoompaDTO) throws ServiceUnavailableException {
-        return new ResponseEntity("service temporarily unavailable", HttpStatus.SERVICE_UNAVAILABLE);
+    public OompaLoompaDTO findById(@PathVariable String id) {
+        return convertToDto(oompaLoompaService.findById(Long.parseLong(id)));
     }
 
     @GetMapping(path = "/findAll")
-    public ResponseEntity<OompaLoompa> findAll(@RequestParam Optional<String> name,
-                                               @RequestParam Optional<String> job,
-                                               @RequestParam Optional<Integer> age,
-                                               @RequestParam(defaultValue = "0") int page,
-                                               @RequestParam(defaultValue = "10") int size) {
+    public Map<String, Object> findAll(@RequestParam Optional<String> name,
+                                       @RequestParam Optional<String> job,
+                                       @RequestParam Optional<Integer> age,
+                                       @RequestParam(defaultValue = "0") int pageNumber,
+                                       @RequestParam(defaultValue = "10") int size) {
 
-        Pageable paging = PageRequest.of(page, size);
-        Page<OompaLoompa> oompaLoompas = oompaLoompaService.findAll(name,job,age,paging);
-        Map<String, Object> response = new HashMap<>();
-        response.put("oompaLoompas", oompaLoompas.getContent());
-        response.put("currentPage", oompaLoompas.getNumber());
-        response.put("totalItems", oompaLoompas.getTotalElements());
-        response.put("totalPages", oompaLoompas.getTotalPages());
+        Page<OompaLoompa> page = oompaLoompaService.findAll(name,job,age,PageRequest.of(pageNumber, size));
+        List<OompaLoompaDTO> result= page.getContent().stream().map(this::convertToDto).collect(Collectors.toList());
 
-        return new ResponseEntity(response, HttpStatus.OK);
+        Map<String, Object> responseMap = new HashMap<>();
+        responseMap.put("content", result);
+        responseMap.put("currentPage", page.getNumber());
+        responseMap.put("totalItems", page.getTotalElements());
+        responseMap.put("totalPages", page.getTotalPages());
+
+        return responseMap;
+    }
+
+    private OompaLoompaDTO convertToDto(OompaLoompa oompaLoompa) {
+        return modelMapper.map(oompaLoompa, OompaLoompaDTO.class);
+    }
+
+    private OompaLoompa convertToEntity(OompaLoompaDTO oompaLoompaDTO){
+        return modelMapper.map(oompaLoompaDTO, OompaLoompa.class);
+    }
+
+    private ResponseEntity fallbackSaveOrUpdate(OompaLoompaDTO oompaLoompaDTO) {
+        return new ResponseEntity("service temporarily unavailable, operation failed for: " +oompaLoompaDTO, HttpStatus.SERVICE_UNAVAILABLE);
     }
 }

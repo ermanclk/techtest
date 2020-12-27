@@ -9,9 +9,11 @@ import java.util.Optional;
 
 public interface OompaLoompaService {
 
-    OompaLoompa findById (Long id) throws InterruptedException;
+    OompaLoompa findById (Long id);
 
     Page<OompaLoompa> findAll(Optional<String> name, Optional<String> job, Optional<Integer> age, Pageable paging);
 
-    void save(OompaLoompaDTO oompaLoompaDTO) throws Exception;
+    void create(OompaLoompa oompaLoompa) throws Exception;
+
+    void update(OompaLoompa oompaLoompa) throws Exception;
 }

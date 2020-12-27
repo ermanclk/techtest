@@ -15,9 +15,15 @@
     <description>tecnnical test</description>
 
     <properties>
-        <java.version>1.8</java.version>
+        <java.version>8</java.version>
         <docker.image.name>techtest</docker.image.name>
         <spring-cloud.version>2020.0.0</spring-cloud.version>
+        <spring-cloud.config.version>2.2.4.RELEASE</spring-cloud.config.version>
+        <netflix.hystrix.version>2.2.4.RELEASE</netflix.hystrix.version>
+        <spring.cache.version>2.3.3.RELEASE</spring.cache.version>
+        <slf4j.version>1.7.30</slf4j.version>
+        <logback.version>1.2.3</logback.version>
+        <liquibase.version>4.2.2</liquibase.version>
     </properties>
 
     <dependencies>
@@ -46,25 +52,61 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.modelmapper</groupId>
+            <artifactId>modelmapper</artifactId>
+            <version>2.3.9</version>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-config</artifactId>
-            <version>2.2.4.RELEASE</version>
+            <version>${spring-cloud.config.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-netflix-hystrix</artifactId>
-            <version>2.2.4.RELEASE</version>
+            <version>${netflix.hystrix.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-cache</artifactId>
-            <version>2.3.3.RELEASE</version>
+            <version>${spring.cache.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.liquibase</groupId>
+            <artifactId>liquibase-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+            <version>${logback.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-ui</artifactId>
+            <version>1.2.32</version>
+        </dependency>
     </dependencies>
 
     <dependencyManagement>
@@ -114,30 +156,33 @@
                             <run>
                                 <network>
                                     <mode>custom</mode>
-                                    <name>work_nappnet</name>
+                                    <name>napptilusnet</name>
                                 </network>
-                                <cmd>--name techapp -p 8080:8080 --rm --link mysql-cont</cmd>
+                                <cmd> --name techapp  --rm </cmd>
                                 <ports>
                                     <port>8080:8080</port>
                                 </ports>
+                                <links>
+                                    <link>mysql-cont</link>
+                                    <link>redis-cache</link>
+                                </links>
                             </run>
                         </image>
                     </images>
 
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>default</id>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>build</goal>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                </executions>
+
 
             </plugin>
-
+            <plugin>
+                <groupId>org.liquibase</groupId>
+                <artifactId>liquibase-maven-plugin</artifactId>
+                <version>${liquibase.version}</version>
+                <configuration>
+                    <propertyFile>src/main/resources/liquibase.properties</propertyFile>
+                    <changeLogFile>db/changelog/db-changelog-master.xml</changeLogFile>
+                </configuration>
+            </plugin>
         </plugins>
 
     </build>

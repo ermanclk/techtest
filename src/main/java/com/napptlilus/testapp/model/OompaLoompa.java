@@ -6,9 +6,12 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import java.io.Serializable;
+import java.util.Objects;
 
 @Entity
 public class OompaLoompa implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -20,22 +23,6 @@ public class OompaLoompa implements Serializable {
     private float weight;
     private String job;
     private String description;
-
-    public OompaLoompa() {
-    }
-
-    public OompaLoompa(String name) {
-        this.name = name;
-    }
-
-    public OompaLoompa(String name, int age, float height, float weight, String job, String description) {
-        this.name = name;
-        this.age = age;
-        this.height = height;
-        this.weight = weight;
-        this.job = job;
-        this.description = description;
-    }
 
     public String getDescription() {
         return description;
@@ -91,5 +78,37 @@ public class OompaLoompa implements Serializable {
 
     public Long getId() {
         return id;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        OompaLoompa that = (OompaLoompa) o;
+        return age == that.age &&
+                Float.compare(that.height, height) == 0 &&
+                Float.compare(that.weight, weight) == 0 &&
+                id.equals(that.id) &&
+                Objects.equals(name, that.name) &&
+                Objects.equals(job, that.job) &&
+                Objects.equals(description, that.description);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, name, age, height, weight, job, description);
+    }
+
+    @Override
+    public String toString() {
+        return "OompaLoompa{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", age=" + age +
+                ", height=" + height +
+                ", weight=" + weight +
+                ", job='" + job + '\'' +
+                ", description='" + description + '\'' +
+                '}';
     }
 }

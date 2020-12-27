@@ -1,10 +1,18 @@
 package com.napptlilus.testapp.service.impl;
 
+import com.fasterxml.jackson.databind.util.BeanUtil;
 import com.napptlilus.testapp.dto.OompaLoompaDTO;
 import com.napptlilus.testapp.exception.NotFoundException;
+import com.napptlilus.testapp.log.LogMe;
 import com.napptlilus.testapp.model.OompaLoompa;
 import com.napptlilus.testapp.repository.OompaLoompaRepository;
 import com.napptlilus.testapp.service.OompaLoompaService;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
+import org.springframework.beans.BeanUtils;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -20,39 +28,39 @@ public class OompaLoompaServiceImpl implements OompaLoompaService {
         this.oompaLoompaRepository = oompaLoompaRepository;
     }
 
-    public OompaLoompa findById(Long id) throws InterruptedException {
-        Thread.sleep (10000);
+    @LogMe("creating new Oompaloompa...")
+    @Override
+    public void create(OompaLoompa oompaLoompa) {
+        oompaLoompaRepository.save(oompaLoompa);
+    }
+
+
+    @Override
+    @LogMe("Updating Oompaloompa..")
+    @CacheEvict(value = "olCache", key = "#oompaLoompa.id")
+    public void update(OompaLoompa oompaLoompa) {
+
+        if(oompaLoompa.getId() == null ){
+            throw new IllegalArgumentException("id is mandatory for update operation.");
+        }
+        OompaLoompa existingOompaLoompa = oompaLoompaRepository.findById(oompaLoompa.getId())
+                    .orElseThrow(() -> new NotFoundException("cannot find element with id:" + oompaLoompa.getId()));
+
+        BeanUtils.copyProperties(oompaLoompa,existingOompaLoompa);
+        oompaLoompaRepository.save(existingOompaLoompa);
+    }
+
+    @Cacheable(value = "olCache", key = "#id")
+    public OompaLoompa findById(Long id) {
         return oompaLoompaRepository.findById(id).orElseThrow(() -> new NotFoundException("element not found - " + id));
     }
 
     @Override
     public Page<OompaLoompa> findAll(Optional<String> name, Optional<String> job, Optional<Integer> age, Pageable paging) {
-
         return oompaLoompaRepository.findAllByNameAndAgeAndJob(
                 name.orElse(null),
                 job.orElse(null),
                 age.orElse(null), paging);
     }
-
-    @Override
-    public void save(OompaLoompaDTO oompaLoompaDTO) throws NotFoundException {
-
-        OompaLoompa ooampaLoompa;
-        if(oompaLoompaDTO.getId() != null){
-            ooampaLoompa = oompaLoompaRepository.findById(oompaLoompaDTO.getId())
-                    .orElseThrow(() -> new NotFoundException("element not found - " + oompaLoompaDTO.getId()));
-        }else{
-            ooampaLoompa = new OompaLoompa();
-        }
-        ooampaLoompa.setAge(oompaLoompaDTO.getAge());
-        ooampaLoompa.setDescription(oompaLoompaDTO.getDescription());
-        ooampaLoompa.setJob(oompaLoompaDTO.getJob());
-        ooampaLoompa.setHeight(oompaLoompaDTO.getHeight());
-        ooampaLoompa.setWeight(oompaLoompaDTO.getWeight());
-        ooampaLoompa.setName(oompaLoompaDTO.getName());
-
-        oompaLoompaRepository.save(ooampaLoompa);
-    }
-
 
 }
