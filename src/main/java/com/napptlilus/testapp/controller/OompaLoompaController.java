@@ -18,7 +18,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/oompaloompa")
+@RequestMapping("/api/v1/oompaloompa")
 public class OompaLoompaController {
 
     private OompaLoompaService oompaLoompaService;
