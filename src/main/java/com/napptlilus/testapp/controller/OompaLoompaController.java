@@ -29,23 +29,36 @@ public class OompaLoompaController {
         this.modelMapper = modelMapper;
     }
 
+    /**
+     * creates OompaLoompa
+     * Wrapped with Hystrix, on any failure or timeout will execute fallback method.
+     * @param oompaLoompaDTO
+     * @return
+     */
     @HystrixCommand(
             fallbackMethod = "fallbackSaveOrUpdate",
             commandKey = "saveCommand")
     @PostMapping
-    public ResponseEntity create(@RequestBody OompaLoompaDTO oompaLoompaDTO) throws Exception {
+    public ResponseEntity<String> create(@RequestBody OompaLoompaDTO oompaLoompaDTO) {
         oompaLoompaService.create(convertToEntity(oompaLoompaDTO));
-        return new ResponseEntity("Success", HttpStatus.OK);
+        return new ResponseEntity<>("Success", HttpStatus.OK);
     }
 
+    /**
+     * updates OompaLoompa
+     * Wrapped with Hystrix, on any failure or timeout will execute fallback method.
+     * @param oompaLoompaDTO
+     * @return
+     * @throws Exception
+     */
     @HystrixCommand(
             fallbackMethod = "fallbackSaveOrUpdate",
             commandKey = "saveCommand",
             ignoreExceptions = {NotFoundException.class,IllegalArgumentException.class})
     @PutMapping
-    public ResponseEntity update(@RequestBody OompaLoompaDTO oompaLoompaDTO) throws Exception {
+    public ResponseEntity<String> update(@RequestBody OompaLoompaDTO oompaLoompaDTO) {
         oompaLoompaService.update(convertToEntity(oompaLoompaDTO));
-        return new ResponseEntity("Success", HttpStatus.OK);
+        return new ResponseEntity<>("Success", HttpStatus.OK);
     }
 
 
@@ -81,7 +94,7 @@ public class OompaLoompaController {
         return modelMapper.map(oompaLoompaDTO, OompaLoompa.class);
     }
 
-    private ResponseEntity fallbackSaveOrUpdate(OompaLoompaDTO oompaLoompaDTO) {
-        return new ResponseEntity("service temporarily unavailable, operation failed for: " +oompaLoompaDTO, HttpStatus.SERVICE_UNAVAILABLE);
+    private ResponseEntity<String> fallbackSaveOrUpdate(OompaLoompaDTO oompaLoompaDTO) {
+        return new ResponseEntity<>("service temporarily unavailable, operation failed for: " +oompaLoompaDTO, HttpStatus.SERVICE_UNAVAILABLE);
     }
 }

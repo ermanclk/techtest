@@ -25,7 +25,7 @@ public class LoggerAdvice {
 
         LogMe annotation = getTargetMethod(joinPoint).getAnnotation(LogMe.class);
         if (annotation != null) {
-            logger.info(getMethodInfo(joinPoint) + " " + annotation.value());
+            logger.info("{}, {}",getMethodInfo(joinPoint), annotation.value());
         }
     }
 
@@ -36,7 +36,7 @@ public class LoggerAdvice {
      * @throws Throwable
      */
     @AfterReturning(pointcut = "@annotation(com.napptlilus.testapp.log.LogMe)", returning = "result")
-    public void logAfterAnnotatedMethodCall(JoinPoint joinPoint, Object result) throws Throwable {
+    public void logAfterAnnotatedMethodCall(JoinPoint joinPoint, Object result) {
         logger.info("Executed {} returned: {}", getMethodInfo(joinPoint), getReturnValue(result));
     }
 

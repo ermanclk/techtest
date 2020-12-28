@@ -13,7 +13,7 @@ public interface OompaLoompaService {
 
     Page<OompaLoompa> findAll(Optional<String> name, Optional<String> job, Optional<Integer> age, Pageable paging);
 
-    void create(OompaLoompa oompaLoompa) throws Exception;
+    void create(OompaLoompa oompaLoompa) ;
 
-    void update(OompaLoompa oompaLoompa) throws Exception;
+    void update(OompaLoompa oompaLoompa) ;
 }
