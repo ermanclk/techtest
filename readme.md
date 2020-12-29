@@ -12,12 +12,12 @@ It provides easy switch between table versions and automatic updates on table st
 By this way you can track table structure changes easily, similar to tracking code changes in git history. 
 
 <b>Netflix-Hystrix:</b>
-Enabling Circuit breaker in application. Used in OompaLoompa Controller to show an example, update and save buttons wrapped with Hystrix Command
+Enabling Circuit breaker in application. Used in OompaLoompa Controller to show an example, update and save methods wrapped with Hystrix Command
 as if it is risky code, in case of failure or timeout it will execute fallback method. 
 The goal is to avoid waiting times for responses and thus treating every request as failed where no response was received within the timeout. 
 
-For update operation, IllegalArgument and NotFound exceptions are excluded from HystrixCommand, as these exceptions are expected to occur, 
-and handled by Exception Handler.
+For update operation, IllegalArgument and NotFound exceptions are excluded from HystrixCommand, as these exceptions are expected to occur and needs to be  
+handled by Exception Handler. (check exception package to see CustomizedExceptionHandler)
  
 <b>Spring-cache:</b>
 
