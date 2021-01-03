@@ -1,6 +1,7 @@
 package com.napptlilus.testapp.controller;
 
 import com.napptlilus.testapp.dto.OompaLoompaDTO;
+import com.napptlilus.testapp.dto.OompaLoompaSummaryDTO;
 import com.napptlilus.testapp.exception.NotFoundException;
 import com.napptlilus.testapp.model.OompaLoompa;
 import com.napptlilus.testapp.service.OompaLoompaService;
@@ -49,7 +50,6 @@ public class OompaLoompaController {
      * Wrapped with Hystrix, on any failure or timeout will execute fallback method.
      * @param oompaLoompaDTO
      * @return
-     * @throws Exception
      */
     @HystrixCommand(
             fallbackMethod = "fallbackSaveOrUpdate",
@@ -61,12 +61,28 @@ public class OompaLoompaController {
         return new ResponseEntity<>("Success", HttpStatus.OK);
     }
 
-
+    /**
+     * find full object details by id
+     * @param id
+     * @return
+     */
     @GetMapping(path = "/{id}")
     public OompaLoompaDTO findById(@PathVariable String id) {
-        return convertToDto(oompaLoompaService.findById(Long.parseLong(id)));
+        return convertToDTO(oompaLoompaService.findById(Long.parseLong(id)), OompaLoompaDTO.class);
     }
 
+    /**
+     * find all oompa loompa list, if parameters (name, job, age) exist,then filter by them.
+     * If there is not any filter parameter bring them all by pagination
+     * Only put name, age and job parameters in response, according to requirement.
+     * in query
+     * @param name
+     * @param job
+     * @param age
+     * @param pageNumber
+     * @param size
+     * @return
+     */
     @GetMapping(path = "/findAll")
     public Map<String, Object> findAll(@RequestParam Optional<String> name,
                                        @RequestParam Optional<String> job,
@@ -75,7 +91,10 @@ public class OompaLoompaController {
                                        @RequestParam(defaultValue = "10") int size) {
 
         Page<OompaLoompa> page = oompaLoompaService.findAll(name,job,age,PageRequest.of(pageNumber, size));
-        List<OompaLoompaDTO> result= page.getContent().stream().map(this::convertToDto).collect(Collectors.toList());
+
+        List<OompaLoompaSummaryDTO> result= page.getContent().stream()
+                .map(oompaLoompa-> convertToDTO(oompaLoompa, OompaLoompaSummaryDTO.class))
+                .collect(Collectors.toList());
 
         Map<String, Object> responseMap = new HashMap<>();
         responseMap.put("content", result);
@@ -86,15 +105,16 @@ public class OompaLoompaController {
         return responseMap;
     }
 
-    private OompaLoompaDTO convertToDto(OompaLoompa oompaLoompa) {
-        return modelMapper.map(oompaLoompa, OompaLoompaDTO.class);
+    private ResponseEntity<String> fallbackSaveOrUpdate(OompaLoompaDTO oompaLoompaDTO) {
+        return new ResponseEntity<>("service temporarily unavailable, operation failed for: " +oompaLoompaDTO,
+                HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
+    private <T> T convertToDTO(OompaLoompa oompaLoompa, Class<T> dtoClassType) {
+        return modelMapper.map(oompaLoompa, dtoClassType);
     }
 
     private OompaLoompa convertToEntity(OompaLoompaDTO oompaLoompaDTO){
         return modelMapper.map(oompaLoompaDTO, OompaLoompa.class);
-    }
-
-    private ResponseEntity<String> fallbackSaveOrUpdate(OompaLoompaDTO oompaLoompaDTO) {
-        return new ResponseEntity<>("service temporarily unavailable, operation failed for: " +oompaLoompaDTO, HttpStatus.SERVICE_UNAVAILABLE);
     }
 }
